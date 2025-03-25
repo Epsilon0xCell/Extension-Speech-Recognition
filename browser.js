@@ -132,9 +132,9 @@ class BrowserSttProvider {
 
         $('#speech_recognition_browser_provider_language').val(this.settings.language);
 
-        const speechRecognitionSettings = $.extend({
-            grammar: '', // Custom grammar
-        }, options);
+        const speechRecognitionSettings = {
+            grammar: '' // Custom grammar
+        };
 
         const speechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         const speechRecognitionList = window.SpeechGrammarList || window.webkitSpeechGrammarList;
@@ -175,9 +175,9 @@ class BrowserSttProvider {
         });
 
         let initialText = '';
+        let finalTranscript = '';
 
         recognition.onresult = function (speechEvent) {
-            let finalTranscript = '';
             let interimTranscript = '';
 
             for (let i = speechEvent.resultIndex; i < speechEvent.results.length; ++i) {
@@ -190,8 +190,8 @@ class BrowserSttProvider {
                         final = BrowserSttProvider.composeValues(final, interim);
                         if (final.slice(-1) != '.' && final.slice(-1) != '?') final += '.';
                         finalTranscript = final;
-                        recognition.abort();
-                        listening = false;
+                        // Don't call abort here - it prevents auto-generation
+                        // Let the speech recognition end naturally or via stop()
                     }
                     interimTranscript = ' ';
                 } else {
@@ -200,8 +200,12 @@ class BrowserSttProvider {
             }
 
             interimTranscript = BrowserSttProvider.capitalizeInterim(interimTranscript);
-
             textarea.val(initialText + finalTranscript + interimTranscript);
+            
+            // If we have a final transcript and no more interim results, stop listening
+            if (finalTranscript && !interimTranscript.trim()) {
+                recognition.stop();
+            }
         };
 
         recognition.onerror = function (event) {
@@ -215,14 +219,17 @@ class BrowserSttProvider {
             console.debug(DEBUG_PREFIX + 'recorder stopped');
             deactivateMicIcon(button);
 
-            const newText = textarea.val().substring(initialText.length);
-            textarea.val(textarea.val().substring(0, initialText.length));
-            processTranscript(newText);
-
+            // Process the full final transcript
+            if (finalTranscript) {
+                textarea.val(textarea.val().substring(0, initialText.length));
+                processTranscript(finalTranscript);
+                finalTranscript = ''; // Reset for next use
+            }
         };
 
         recognition.onstart = function () {
             initialText = textarea.val();
+            finalTranscript = ''; // Reset transcript on new recording
             console.debug(DEBUG_PREFIX + 'recorder started');
             activateMicIcon(button);
 
@@ -236,6 +243,5 @@ class BrowserSttProvider {
 
         console.debug(DEBUG_PREFIX + 'Browser STT settings loaded');
     }
-
 
 }
