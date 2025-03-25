@@ -165,6 +165,7 @@ class BrowserSttProvider {
         const button = $('#microphone_button');
 
         let listening = false;
+        let heartbeatInterval = null;
         
         // Function to check if voice activation is enabled
         const isVoiceActivationEnabled = () => {
@@ -173,11 +174,47 @@ class BrowserSttProvider {
         
         // Function to start recognition if not already listening
         const startRecognition = () => {
-            if (!listening) {
-                recognition.start();
-                listening = true;
-                activateMicIcon(button);
+            try {
+                if (!listening) {
+                    recognition.start();
+                    listening = true;
+                    activateMicIcon(button);
+                    console.debug(DEBUG_PREFIX + 'Recognition started');
+                }
+            } catch (error) {
+                console.error(DEBUG_PREFIX + 'Error starting recognition:', error);
+                listening = false;
+                // Try again after a short delay
+                setTimeout(() => {
+                    if (isVoiceActivationEnabled()) {
+                        startRecognition();
+                    }
+                }, 1000);
             }
+        };
+
+        // Setup a heartbeat to ensure recognition keeps running
+        const setupHeartbeat = () => {
+            // Clear any existing heartbeat
+            if (heartbeatInterval) {
+                clearInterval(heartbeatInterval);
+            }
+            
+            // Set up a new heartbeat that checks every 5 seconds
+            heartbeatInterval = setInterval(() => {
+                if (isVoiceActivationEnabled()) {
+                    if (!listening) {
+                        console.debug(DEBUG_PREFIX + 'Heartbeat detected recognition stopped, restarting...');
+                        startRecognition();
+                    } else {
+                        console.debug(DEBUG_PREFIX + 'Heartbeat: recognition is active');
+                    }
+                } else {
+                    // Voice activation was disabled, clear the heartbeat
+                    clearInterval(heartbeatInterval);
+                    heartbeatInterval = null;
+                }
+            }, 5000);
         };
         
         // Initialize voice activation if enabled
@@ -185,6 +222,7 @@ class BrowserSttProvider {
             if (isVoiceActivationEnabled()) {
                 console.debug(DEBUG_PREFIX + 'Voice activation enabled, starting recognition automatically');
                 startRecognition();
+                setupHeartbeat();
             }
         };
         
@@ -196,13 +234,29 @@ class BrowserSttProvider {
             if (this.checked) {
                 console.debug(DEBUG_PREFIX + 'Voice activation turned on, starting recognition');
                 startRecognition();
+                setupHeartbeat();
             } else if (listening) {
                 console.debug(DEBUG_PREFIX + 'Voice activation turned off, stopping recognition');
                 recognition.stop();
                 listening = false;
                 deactivateMicIcon(button);
+                
+                // Clear the heartbeat
+                if (heartbeatInterval) {
+                    clearInterval(heartbeatInterval);
+                    heartbeatInterval = null;
+                }
             }
         });
+
+        // Make sure to clean up the heartbeat when the provider is stopped
+        this.stopHeartbeat = () => {
+            if (heartbeatInterval) {
+                clearInterval(heartbeatInterval);
+                heartbeatInterval = null;
+                console.debug(DEBUG_PREFIX + 'Heartbeat stopped');
+            }
+        };
 
         button.off('click').on('click', function () {
             if (listening) {
@@ -262,31 +316,39 @@ class BrowserSttProvider {
         };
 
         recognition.onerror = function (event) {
-            console.error('Error occurred in recognition:', event.error);
+            console.error(DEBUG_PREFIX + 'Error occurred in recognition:', event.error);
             
-            // If the error is not fatal and voice activation is enabled, restart recognition
-            if (isVoiceActivationEnabled()) {
-                console.debug(DEBUG_PREFIX + 'Attempting to restart recognition after error');
-                setTimeout(() => {
-                    if (isVoiceActivationEnabled()) {
-                        startRecognition();
-                    }
-                }, 500);
+            // Handle no-speech errors specially - these are normal during silence
+            if (event.error === 'no-speech') {
+                console.debug(DEBUG_PREFIX + 'No speech detected, this is normal during silence');
+                // Don't mark as not listening, let the onend handler restart if needed
+            } else {
+                // For other errors, mark as not listening so the heartbeat or onend can restart
+                listening = false;
+                console.debug(DEBUG_PREFIX + 'Recognition marked as stopped due to error');
             }
+            
+            // If voice activation is enabled, let the onend handler restart it
+            // The heartbeat will also restart if onend fails
         };
 
         recognition.onend = function () {
-            console.debug(DEBUG_PREFIX + 'recorder stopped');
+            console.debug(DEBUG_PREFIX + 'Recognition ended');
             
             // If voice activation is enabled, restart recognition automatically
             if (isVoiceActivationEnabled()) {
                 console.debug(DEBUG_PREFIX + 'Voice activation enabled, restarting recognition');
-                // Small delay to prevent rapid restart loops
-                setTimeout(() => {
-                    if (isVoiceActivationEnabled()) {  // Check again in case setting changed
-                        startRecognition();
-                    }
-                }, 300);
+                // Try to restart immediately
+                try {
+                    recognition.start();
+                    listening = true;
+                    console.debug(DEBUG_PREFIX + 'Recognition restarted successfully');
+                } catch (error) {
+                    // If immediate restart fails, mark as not listening and let the heartbeat handle it
+                    console.error(DEBUG_PREFIX + 'Failed to restart recognition:', error);
+                    listening = false;
+                    deactivateMicIcon(button);
+                }
             } else {
                 listening = false;
                 deactivateMicIcon(button);
@@ -315,6 +377,13 @@ class BrowserSttProvider {
         $('#microphone_button').show();
 
         console.debug(DEBUG_PREFIX + 'Browser STT settings loaded');
+    }
+
+    // Add a cleanup method to the provider
+    cleanup() {
+        if (this.stopHeartbeat) {
+            this.stopHeartbeat();
+        }
     }
 
 }
