@@ -232,8 +232,6 @@ class BrowserSttProvider {
                         final = BrowserSttProvider.composeValues(final, interim);
                         if (final.slice(-1) != '.' && final.slice(-1) != '?') final += '.';
                         finalTranscript = final;
-                        // Don't call abort here - it prevents auto-generation
-                        // Let the speech recognition end naturally or via stop()
                     }
                     interimTranscript = ' ';
                 } else {
@@ -244,9 +242,22 @@ class BrowserSttProvider {
             interimTranscript = BrowserSttProvider.capitalizeInterim(interimTranscript);
             textarea.val(initialText + finalTranscript + interimTranscript);
             
-            // If we have a final transcript and no more interim results, stop listening
-            if (finalTranscript && !interimTranscript.trim()) {
+            // Only stop listening if we're not in voice activation mode
+            if (finalTranscript && !interimTranscript.trim() && !isVoiceActivationEnabled()) {
                 recognition.stop();
+            } else if (finalTranscript && !interimTranscript.trim() && isVoiceActivationEnabled()) {
+                // In voice activation mode, process the transcript without stopping recognition
+                console.debug(DEBUG_PREFIX + 'Processing transcript while keeping recognition active');
+                const transcriptToProcess = finalTranscript;
+                
+                // Reset the textarea
+                textarea.val(textarea.val().substring(0, initialText.length));
+                
+                // Process the transcript
+                processTranscript(transcriptToProcess);
+                
+                // Reset for the next speech input
+                finalTranscript = '';
             }
         };
 
@@ -254,10 +265,12 @@ class BrowserSttProvider {
             console.error('Error occurred in recognition:', event.error);
             
             // If the error is not fatal and voice activation is enabled, restart recognition
-            if (event.error !== 'no-speech' && event.error !== 'aborted' && isVoiceActivationEnabled()) {
+            if (isVoiceActivationEnabled()) {
                 console.debug(DEBUG_PREFIX + 'Attempting to restart recognition after error');
                 setTimeout(() => {
-                    startRecognition();
+                    if (isVoiceActivationEnabled()) {
+                        startRecognition();
+                    }
                 }, 500);
             }
         };
@@ -270,7 +283,9 @@ class BrowserSttProvider {
                 console.debug(DEBUG_PREFIX + 'Voice activation enabled, restarting recognition');
                 // Small delay to prevent rapid restart loops
                 setTimeout(() => {
-                    startRecognition();
+                    if (isVoiceActivationEnabled()) {  // Check again in case setting changed
+                        startRecognition();
+                    }
                 }, 300);
             } else {
                 listening = false;
