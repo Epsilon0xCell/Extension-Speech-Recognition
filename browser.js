@@ -165,13 +165,55 @@ class BrowserSttProvider {
         const button = $('#microphone_button');
 
         let listening = false;
+        
+        // Function to check if voice activation is enabled
+        const isVoiceActivationEnabled = () => {
+            return $('#speech_recognition_voice_activation_enabled').is(':checked');
+        };
+        
+        // Function to start recognition if not already listening
+        const startRecognition = () => {
+            if (!listening) {
+                recognition.start();
+                listening = true;
+                activateMicIcon(button);
+            }
+        };
+        
+        // Initialize voice activation if enabled
+        const initVoiceActivation = () => {
+            if (isVoiceActivationEnabled()) {
+                console.debug(DEBUG_PREFIX + 'Voice activation enabled, starting recognition automatically');
+                startRecognition();
+            }
+        };
+        
+        // Start recognition automatically when voice activation is enabled
+        initVoiceActivation();
+        
+        // Monitor the voice activation checkbox for changes
+        $('#speech_recognition_voice_activation_enabled').off('change').on('change', function() {
+            if (this.checked) {
+                console.debug(DEBUG_PREFIX + 'Voice activation turned on, starting recognition');
+                startRecognition();
+            } else if (listening) {
+                console.debug(DEBUG_PREFIX + 'Voice activation turned off, stopping recognition');
+                recognition.stop();
+                listening = false;
+                deactivateMicIcon(button);
+            }
+        });
+
         button.off('click').on('click', function () {
             if (listening) {
                 recognition.stop();
+                listening = false;
+                deactivateMicIcon(button);
             } else {
                 recognition.start();
+                listening = true;
+                activateMicIcon(button);
             }
-            listening = !listening;
         });
 
         let initialText = '';
@@ -210,20 +252,36 @@ class BrowserSttProvider {
 
         recognition.onerror = function (event) {
             console.error('Error occurred in recognition:', event.error);
-            //if ($('#speech_recognition_debug').is(':checked'))
-            //    toastr.error('Error occurred in recognition:'+ event.error, 'STT Generation error (Browser)', { timeOut: 10000, extendedTimeOut: 20000, preventDuplicates: true });
+            
+            // If the error is not fatal and voice activation is enabled, restart recognition
+            if (event.error !== 'no-speech' && event.error !== 'aborted' && isVoiceActivationEnabled()) {
+                console.debug(DEBUG_PREFIX + 'Attempting to restart recognition after error');
+                setTimeout(() => {
+                    startRecognition();
+                }, 500);
+            }
         };
 
         recognition.onend = function () {
-            listening = false;
             console.debug(DEBUG_PREFIX + 'recorder stopped');
-            deactivateMicIcon(button);
-
-            // Process the full final transcript
-            if (finalTranscript) {
-                textarea.val(textarea.val().substring(0, initialText.length));
-                processTranscript(finalTranscript);
-                finalTranscript = ''; // Reset for next use
+            
+            // If voice activation is enabled, restart recognition automatically
+            if (isVoiceActivationEnabled()) {
+                console.debug(DEBUG_PREFIX + 'Voice activation enabled, restarting recognition');
+                // Small delay to prevent rapid restart loops
+                setTimeout(() => {
+                    startRecognition();
+                }, 300);
+            } else {
+                listening = false;
+                deactivateMicIcon(button);
+                
+                // Process the full final transcript
+                if (finalTranscript) {
+                    textarea.val(textarea.val().substring(0, initialText.length));
+                    processTranscript(finalTranscript);
+                    finalTranscript = ''; // Reset for next use
+                }
             }
         };
 
