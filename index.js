@@ -357,7 +357,10 @@ function loadSttProvider(provider) {
  * @param {JQuery} micButton - The jQuery object of the microphone button.
  */
 function activateMicIcon(micButton) {
-    micButton.toggleClass('fa-microphone fa-microphone-slash');
+    // Set the state instead of toggling it: callers include both the click
+    // and start handlers and recognition.onstart, so a start is signalled
+    // twice and a toggle would cancel itself back to the inactive icon.
+    micButton.removeClass('fa-microphone').addClass('fa-microphone-slash');
     micButton.prop('title', 'Click to end and transcribe');
 }
 
@@ -366,7 +369,7 @@ function activateMicIcon(micButton) {
  * @param {JQuery} micButton - The jQuery object of the microphone button.
  */
 function deactivateMicIcon(micButton) {
-    micButton.toggleClass('fa-microphone fa-microphone-slash');
+    micButton.removeClass('fa-microphone-slash').addClass('fa-microphone');
     micButton.prop('title', 'Click to speak');
 }
 

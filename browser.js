@@ -114,13 +114,24 @@ class BrowserSttProvider {
     loadSettings(settings) {
         const processTranscript = this.processTranscriptFunction;
 
+        // A previous loadSettings call may have left a heartbeat running.
+        // Its interval is only reachable through the previous stopHeartbeat
+        // closure, so stop it now or it leaks and keeps restarting the old
+        // recognition object after every settings or language change.
+        if (typeof this.stopHeartbeat === 'function') {
+            this.stopHeartbeat();
+            this.stopHeartbeat = null;
+        }
+
         // Populate Provider UI given input settings
         if (Object.keys(settings).length == 0) {
             console.debug(DEBUG_PREFIX + 'Using default browser STT settings');
         }
 
-        // Initialise as defaultSettings
-        this.settings = this.defaultSettings;
+        // Initialise as a copy of defaultSettings. Assigning the object
+        // itself would let the loop below mutate the defaults, so a later
+        // reload could never restore them.
+        this.settings = { ...this.defaultSettings };
 
         for (const key in settings) {
             if (key in this.settings) {
@@ -337,6 +348,16 @@ class BrowserSttProvider {
             
             // If voice activation is enabled, restart recognition automatically
             if (isVoiceActivationEnabled()) {
+                // A final transcript that was not already processed in
+                // onresult (for example one delivered together with interim
+                // text) must be processed here, not discarded by the restart.
+                // onstart clears finalTranscript, so this has to happen
+                // before recognition.start() is called.
+                if (finalTranscript) {
+                    textarea.val(textarea.val().substring(0, initialText.length));
+                    processTranscript(finalTranscript);
+                    finalTranscript = '';
+                }
                 console.debug(DEBUG_PREFIX + 'Voice activation enabled, restarting recognition');
                 // Try to restart immediately
                 try {
