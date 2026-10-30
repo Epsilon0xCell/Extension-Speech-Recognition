@@ -369,6 +369,9 @@ function activateMicIcon(micButton) {
  * @param {JQuery} micButton - The jQuery object of the microphone button.
  */
 function deactivateMicIcon(micButton) {
+    // Same reasoning as activateMicIcon above, in the other direction:
+    // stop gets signalled twice as well, and an explicit state survives
+    // that where a toggle lands back on the recording icon.
     micButton.removeClass('fa-microphone-slash').addClass('fa-microphone');
     micButton.prop('title', 'Click to speak');
 }
@@ -376,6 +379,12 @@ function deactivateMicIcon(micButton) {
 function stopCurrentProvider() {
     console.debug(DEBUG_PREFIX + 'stop current provider');
     
+    // I added this call when I gave the Browser provider a heartbeat.
+    // The typeof check is the price of it: most providers in the registry
+    // have no cleanup method at all, and calling one unconditionally
+    // would break switching away from any of them. It also runs first,
+    // before the recorder teardown below, so no interval is left running
+    // while the rest of this function takes the microphone apart.
     // Clean up the current provider if it has a cleanup method
     if (sttProvider && typeof sttProvider.cleanup === 'function') {
         sttProvider.cleanup();

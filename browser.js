@@ -178,6 +178,10 @@ class BrowserSttProvider {
         let listening = false;
         let heartbeatInterval = null;
         
+        // I read the checkbox live every time instead of caching its
+        // state when the settings load. The user can flip it without a
+        // reload, and the onresult, onend, and heartbeat decisions below
+        // all have to see the value as it is now, not as it was.
         // Function to check if voice activation is enabled
         const isVoiceActivationEnabled = () => {
             return $('#speech_recognition_voice_activation_enabled').is(':checked');
@@ -186,6 +190,11 @@ class BrowserSttProvider {
         // Function to start recognition if not already listening
         const startRecognition = () => {
             try {
+                // The listening guard is load bearing: calling start() on
+                // a recognition object that is already running throws, and
+                // this helper gets called from the heartbeat, the checkbox
+                // handler, and the retry timer below, sometimes for the
+                // same stoppage.
                 if (!listening) {
                     recognition.start();
                     listening = true;
@@ -196,6 +205,10 @@ class BrowserSttProvider {
                 console.error(DEBUG_PREFIX + 'Error starting recognition:', error);
                 listening = false;
                 // Try again after a short delay
+                // The delayed retry checks the checkbox again before it
+                // starts anything. Without that second check, turning
+                // voice activation off inside that second would still be
+                // followed by the microphone opening on its own.
                 setTimeout(() => {
                     if (isVoiceActivationEnabled()) {
                         startRecognition();
@@ -212,6 +225,13 @@ class BrowserSttProvider {
             }
             
             // Set up a new heartbeat that checks every 5 seconds
+            // The heartbeat is a backstop, not the main restart path.
+            // onend already restarts recognition, but a browser can end
+            // a session without a clean end event reaching me, and then
+            // nothing else would ever start it again. The tick also
+            // rechecks the checkbox and clears itself, so a heartbeat
+            // whose handler missed the switch off still dies within one
+            // interval instead of living for the rest of the page.
             heartbeatInterval = setInterval(() => {
                 if (isVoiceActivationEnabled()) {
                     if (!listening) {
@@ -241,6 +261,10 @@ class BrowserSttProvider {
         initVoiceActivation();
         
         // Monitor the voice activation checkbox for changes
+        // The off() call matters more than it looks. loadSettings runs
+        // again on every language and provider change, and each run that
+        // stacked another change handler on this checkbox would start
+        // recognition once per stacked handler for a single click.
         $('#speech_recognition_voice_activation_enabled').off('change').on('change', function() {
             if (this.checked) {
                 console.debug(DEBUG_PREFIX + 'Voice activation turned on, starting recognition');
@@ -261,6 +285,11 @@ class BrowserSttProvider {
         });
 
         // Make sure to clean up the heartbeat when the provider is stopped
+        // This closure is the only handle on this load's heartbeatInterval
+        // and on this load's recognition object. I store it on the
+        // provider for that reason, and the top of loadSettings calls the
+        // previous load's copy before this line replaces it, which is
+        // the order that keeps exactly one heartbeat alive.
         this.stopHeartbeat = () => {
             if (heartbeatInterval) {
                 clearInterval(heartbeatInterval);
@@ -269,6 +298,13 @@ class BrowserSttProvider {
             }
         };
 
+        // This is the manual path, and I keep it apart from voice
+        // activation on purpose: a click session gets no heartbeat, so
+        // when the browser ends it, it stays ended until the user clicks
+        // again. Each branch also sets listening to the state it just
+        // created instead of flipping it afterwards, because onstart and
+        // onend move the same flag and a flip would trust a value those
+        // handlers may already have changed.
         button.off('click').on('click', function () {
             if (listening) {
                 recognition.stop();
@@ -282,6 +318,10 @@ class BrowserSttProvider {
         });
 
         let initialText = '';
+        // I keep finalTranscript out here, shared by every handler,
+        // instead of local to onresult where it started. onend needs to
+        // see a final result that arrived bundled with interim text and
+        // was never sent, and a local copy would be gone by then.
         let finalTranscript = '';
 
         recognition.onresult = function (speechEvent) {
@@ -307,15 +347,28 @@ class BrowserSttProvider {
             interimTranscript = BrowserSttProvider.capitalizeInterim(interimTranscript);
             textarea.val(initialText + finalTranscript + interimTranscript);
             
+            // Both branches wait for the interim text to be empty. A
+            // final result that arrives in the same event as interim text
+            // is not the end of what the user is saying yet, and acting on
+            // it here would cut one utterance into two messages.
             // Only stop listening if we're not in voice activation mode
             if (finalTranscript && !interimTranscript.trim() && !isVoiceActivationEnabled()) {
+                // I only stop here. Sending the transcript is onend's
+                // job, once the stop has actually landed, so the text is
+                // handled in exactly one place for this mode.
                 recognition.stop();
             } else if (finalTranscript && !interimTranscript.trim() && isVoiceActivationEnabled()) {
                 // In voice activation mode, process the transcript without stopping recognition
                 console.debug(DEBUG_PREFIX + 'Processing transcript while keeping recognition active');
+                // I copy the transcript out before touching anything:
+                // the two steps below clear the textarea copy and then
+                // finalTranscript itself, in that order.
                 const transcriptToProcess = finalTranscript;
                 
                 // Reset the textarea
+                // Cutting back to initialText length keeps whatever the
+                // user had typed before dictating and drops only the
+                // dictated preview this provider wrote in.
                 textarea.val(textarea.val().substring(0, initialText.length));
                 
                 // Process the transcript
@@ -332,6 +385,11 @@ class BrowserSttProvider {
             // Handle no-speech errors specially - these are normal during silence
             if (event.error === 'no-speech') {
                 console.debug(DEBUG_PREFIX + 'No speech detected, this is normal during silence');
+                // Silence is the normal state of a voice activation
+                // session, not a failure of it. Leaving listening alone
+                // here keeps the heartbeat from deciding the session is
+                // dead and starting a second recognition on top of this
+                // one while the browser is still winding it down.
                 // Don't mark as not listening, let the onend handler restart if needed
             } else {
                 // For other errors, mark as not listening so the heartbeat or onend can restart
@@ -365,6 +423,10 @@ class BrowserSttProvider {
                     listening = true;
                     console.debug(DEBUG_PREFIX + 'Recognition restarted successfully');
                 } catch (error) {
+                    // A failed immediate restart is not the end of the
+                    // session in this mode. Setting listening to false is
+                    // what hands the job to the heartbeat, which retries
+                    // on its next tick instead of this handler giving up.
                     // If immediate restart fails, mark as not listening and let the heartbeat handle it
                     console.error(DEBUG_PREFIX + 'Failed to restart recognition:', error);
                     listening = false;
@@ -385,6 +447,9 @@ class BrowserSttProvider {
 
         recognition.onstart = function () {
             initialText = textarea.val();
+            // This reset is why onend has to send any pending transcript
+            // before it restarts recognition: once onstart runs, that
+            // text is unrecoverable.
             finalTranscript = ''; // Reset transcript on new recording
             console.debug(DEBUG_PREFIX + 'recorder started');
             activateMicIcon(button);
@@ -401,6 +466,11 @@ class BrowserSttProvider {
     }
 
     // Add a cleanup method to the provider
+    // This only stops the heartbeat. There is no recognition handle out
+    // here to stop: the object lives inside the loadSettings closure, so
+    // a session that is live when the provider is switched away ends on
+    // the browser's terms, not mine. I note that rather than pretend
+    // cleanup shuts the whole provider down.
     cleanup() {
         if (this.stopHeartbeat) {
             this.stopHeartbeat();
