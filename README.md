@@ -42,12 +42,17 @@ The Browser provider in this copy differs from upstream:
 ## Verified behavior
 
 All JavaScript files pass a Node module parse check. The Browser provider
-was exercised headlessly in Node with stubbed jQuery, `window`, and
-`SpeechRecognition` objects: settings reload, heartbeat cleanup, the
-voice activation end of session transcript path, and the microphone icon
-state functions. A running SillyTavern instance and a real microphone were
-not available in the test environment, so live transcription itself was
-not exercised.
+is covered by a persistent Node test suite in test/ (11 tests) that runs
+browser.js and the mic icon helpers from index.js against a stub
+SillyTavern host: settings loading and defaults, heartbeat cleanup on
+reload and on provider cleanup, the voice activation transcript paths,
+manual click sessions, error handling, and the transcript shaping
+helpers. Run it with Node 20 or newer:
+
+    node --test test/browser-provider.test.mjs
+
+A running SillyTavern instance and a real microphone were not available
+in the test environment, so live transcription itself was not exercised.
 
 ## License and credits
 
