@@ -1,6 +1,12 @@
-![Extension-Speech-Recognition](banner.png)
+![Intro: a marching band rehearsing in heavy rain, a huge sousaphone bell in front, the whole formation standing in its own steam](intro-banner.png)
 
 # Extension-Speech-Recognition
+
+![Extension-Speech-Recognition](banner.png)
+
+![Scene: rain over the bleachers, a swaying sousaphone bell, marquee bulbs chasing, valves ticking in front](assets-scene.svg)
+
+![Sousaphone bell header plate for the first heading](sep-heavy.svg)
 
 A SillyTavern extension that converts speech to text. It descends from the
 upstream SillyTavern speech recognition extension (see the credits below);
@@ -24,7 +30,11 @@ Selected in the extension settings in SillyTavern:
 Message modes (append, replace, auto send), message mapping, push to talk,
 and voice activation are configured in the same settings panel.
 
+![Separator: a metronome silhouette ticking a slow beat across a staff line](sep-heavy.svg)
+
 ## Local changes
+
+> **Margin note, drum major's hand.** Count in the bars the band kept dropping: heartbeat, restart, transcript saved first. Again. Again. Played clean below.
 
 The Browser provider in this copy differs from upstream:
 
@@ -53,6 +63,8 @@ helpers. Run it with Node 20 or newer:
 
 A running SillyTavern instance and a real microphone were not available
 in the test environment, so live transcription itself was not exercised.
+
+![Separator: the metronome arm alone, centred, one swing and rest](sep-light.svg)
 
 ## License and credits
 
