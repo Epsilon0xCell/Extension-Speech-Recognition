@@ -1,6 +1,8 @@
-![Intro: a marching band rehearsing in heavy rain, a huge sousaphone bell in front, the whole formation standing in its own steam](intro-banner.png)
+![Intro: a close crop of a Swiss poster grid, one red sound wave being squared into a black bar by a thin blue guide line, paper white ground](intro-banner.png)
 
 # Extension-Speech-Recognition
+
+<p align="center"><img src="logo.png" alt="Extension-Speech-Recognition logo: a bold black microphone on paper white, three signal red sound arcs landing as a neat row of black transcript bars, one small blue square" width="200"></p>
 
 ![Extension-Speech-Recognition](banner.png)
 
