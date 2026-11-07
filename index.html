@@ -3,56 +3,58 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Extension Speech Recognition: the rain rehearsal</title>
-<meta name="description" content="A SillyTavern extension that converts speech to text, marched in rehearsal order: providers, settings, the local changes, verification, licence and credits.">
+<title>Extension Speech Recognition: voice in, text out, on the grid</title>
+<meta name="description" content="A SillyTavern extension that converts speech to text, set out on a strict grid: providers, settings, the local changes, verification, licence and credits.">
 <style>
-@font-face{font-family:'Aguafina Script';src:url('fonts/AguafinaScript-Regular.ttf') format('truetype')}
-@font-face{font-family:'Alegreya Sans';src:url('fonts/AlegreyaSans-Regular.ttf') format('truetype')}
-@font-face{font-family:'Alegreya Sans';src:url('fonts/AlegreyaSans-Bold.ttf') format('truetype');font-weight:700}
-:root{--indigo:#23224a;--indigo2:#191838;--silver:rgba(168,174,186,.14);--brass:#c69e4a;--neon:#4696ff;--ink:#f0ead8;--dim:#c6c2b2}
+@font-face{font-family:'Libre Franklin';src:url('fonts/LibreFranklin-Regular.ttf') format('truetype');font-weight:400}
+@font-face{font-family:'Libre Franklin';src:url('fonts/LibreFranklin-Bold.ttf') format('truetype');font-weight:700}
+@font-face{font-family:'Libre Franklin';src:url('fonts/LibreFranklin-Black.ttf') format('truetype');font-weight:900}
+@font-face{font-family:'Hanken Grotesk';src:url('fonts/HankenGrotesk-Regular.ttf') format('truetype');font-weight:400}
+@font-face{font-family:'Hanken Grotesk';src:url('fonts/HankenGrotesk-Bold.ttf') format('truetype');font-weight:700}
+:root{--paper:#fbfaf6;--ink:#111111;--red:#e30613;--blue:#1b4fbc;--grey:#5a5a55}
 *{box-sizing:border-box;margin:0;padding:0}
-body{background:linear-gradient(180deg,var(--indigo),var(--indigo2));color:var(--ink);font-family:'Alegreya Sans',sans-serif;line-height:1.6}
+body{background:var(--paper);color:var(--ink);font-family:'Hanken Grotesk',sans-serif;line-height:1.6}
 .wrap{max-width:1140px;margin:0 auto;padding:0 22px 64px}
-h1{font-family:'Aguafina Script',cursive;font-size:4.4rem;font-weight:400;line-height:1.05;color:#eecf8c}
-h2{font-family:'Aguafina Script',cursive;font-size:3rem;font-weight:400;line-height:1.1;color:#eecf8c}
-h2 .role{display:block;font-family:'Alegreya Sans',sans-serif;font-size:.92rem;color:var(--dim);letter-spacing:.06em}
-h3{font-size:1.08rem}
+h1{font-family:'Libre Franklin',sans-serif;font-size:3.6rem;font-weight:900;line-height:1.02;text-transform:uppercase;letter-spacing:-.01em}
+h2{font-family:'Libre Franklin',sans-serif;font-size:2.4rem;font-weight:900;line-height:1.05;text-transform:uppercase}
+h2 .role{display:block;font-family:'Hanken Grotesk',sans-serif;font-weight:400;text-transform:none;font-size:.95rem;color:var(--red);letter-spacing:.04em;margin-top:4px}
+h3{font-size:1.08rem;font-family:'Libre Franklin',sans-serif;font-weight:700}
 p{margin-top:11px;max-width:66ch}
 .lede{font-size:1.14rem;max-width:64ch}
-img.banner,img.intro{width:100%;display:block;border:2px solid var(--brass)}
-figure{margin-top:18px}figcaption{font-size:.88rem;color:var(--dim);padding-top:7px}
-.rank{margin-top:52px;background:var(--silver);border:1px solid rgba(198,158,74,.4);border-radius:14px;padding:24px 28px}
+img.banner,img.intro{width:100%;display:block;border:3px solid var(--ink)}
+figure{margin-top:18px}figcaption{font-size:.88rem;color:var(--grey);padding-top:7px}
+.rank{margin-top:52px;background:#fff;border:3px solid var(--ink);padding:24px 28px}
 .rank.step-r{margin-left:9%}.rank.step-l{margin-right:9%}
-.bulbs{height:10px;margin-top:52px;background:radial-gradient(circle at 5px 5px,#ffd678 3.4px,transparent 4px) repeat-x;background-size:44px 10px;opacity:.5}
-.btn{display:inline-block;background:#2c2a58;color:var(--ink);text-decoration:none;border:2px solid var(--brass);border-radius:999px;padding:.6em 1.4em;margin:.4em .35em 0 0;box-shadow:inset 0 -8px 14px rgba(0,0,0,.35)}
-.btn:hover{background:linear-gradient(180deg,#2c2a58,#4a3a20);color:#ffe9ad}
-.btn:active{transform:translateY(2px);filter:brightness(.82)}
-a{color:var(--brass);text-decoration:none}
-a .stub{display:inline-block;border:1px dashed var(--dim);color:var(--dim);font-size:.68rem;padding:.05em .45em;margin-right:.45em;border-radius:3px;vertical-align:.12em}
-a:hover{color:#ffe9ad} a:hover .stub{border-color:var(--neon);color:var(--neon)}
+.bulbs{height:10px;margin-top:52px;background:repeating-linear-gradient(90deg,var(--red) 0 26px,transparent 26px 44px)}
+.btn{display:inline-block;background:var(--ink);color:#fff;text-decoration:none;border:3px solid var(--ink);padding:.6em 1.4em;margin:.4em .35em 0 0;font-family:'Libre Franklin',sans-serif;font-weight:700}
+.btn:hover{background:var(--red);border-color:var(--red)}
+.btn:active{transform:translateY(2px)}
+a{color:var(--blue);text-decoration:none}
+a .stub{display:inline-block;border:1px solid var(--grey);color:var(--grey);font-size:.68rem;padding:.05em .45em;margin-right:.45em;vertical-align:.12em}
+a:hover{color:var(--red)} a:hover .stub{border-color:var(--red);color:var(--red)}
 .btn .stub{display:none}
-.case{background:rgba(20,19,44,.55);border:2px solid rgba(198,158,74,.55);border-radius:10px;padding:17px 20px}
+.case{background:#fff;border:2px solid var(--ink);padding:17px 20px}
 .cases{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px;margin-top:16px}
-.case h3{border-bottom:1px solid rgba(198,158,74,.4);padding-bottom:6px}
+.case h3{border-bottom:3px solid var(--red);padding-bottom:6px}
 ul{margin:12px 0 0 21px;max-width:66ch}li{margin-bottom:8px}
 table{border-collapse:collapse;width:100%;margin-top:14px}
-td,th{border-bottom:1px solid rgba(198,158,74,.35);padding:.45rem .6rem;text-align:left}
-pre.code{background:#101020;color:#e8e6df;padding:16px 19px;border-radius:10px;overflow-x:auto;font-size:.85rem;border-left:5px solid var(--neon);margin-top:14px}
+td,th{border-bottom:2px solid var(--ink);padding:.45rem .6rem;text-align:left}
+pre.code{background:var(--ink);color:#f4f2ec;padding:16px 19px;overflow-x:auto;font-size:.85rem;border-left:8px solid var(--red);margin-top:14px}
 code,.mono{font-family:ui-monospace,Menlo,Consolas,monospace}
-.sound{color:var(--neon)}
+.sound{color:var(--red)}
 .shots{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));margin-top:16px}
-.shots img{width:100%;border:1px solid rgba(198,158,74,.4);border-radius:8px;background:#f4f1e8}
-.note{border:1.6px solid rgba(240,234,216,.6);border-radius:3px 12px 12px 3px;padding:14px 18px;margin-top:15px;max-width:66ch}
-.note .count{font-family:'Aguafina Script',cursive;font-size:1.5rem;color:#eecf8c}
-footer{margin-top:56px;color:var(--dim);font-size:.92rem}
+.shots img{width:100%;border:2px solid var(--ink);background:#fff}
+.note{border:2px solid var(--ink);border-left:10px solid var(--blue);padding:14px 18px;margin-top:15px;max-width:66ch;background:#fff}
+.note .count{font-family:'Libre Franklin',sans-serif;font-weight:900;font-size:1.5rem;color:var(--red)}
+footer{margin-top:56px;color:var(--grey);font-size:.92rem}
 nav.stepnav{display:flex;flex-wrap:wrap;gap:4px 18px;margin-top:16px}
-@media(max-width:760px){h1{font-size:3rem}h2{font-size:2.3rem}.rank.step-r,.rank.step-l{margin-left:0;margin-right:0}}
+@media(max-width:760px){h1{font-size:2.4rem}h2{font-size:1.8rem}.rank.step-r,.rank.step-l{margin-left:0;margin-right:0}}
 </style>
 </head>
 <body>
 <div class="wrap">
 <header>
-<figure><img class="intro" src="themed-intro.png" alt="A marching band rehearsing in heavy rain: a huge sousaphone bell in front, the band steaming in formation, the drum major on her ladder"><figcaption>The wordless picture for this build: the band that stayed out in the rain.</figcaption></figure>
+<figure><img class="intro" src="themed-intro.png" alt="A close crop of a Swiss poster grid: a single red sound wave being squared into a black bar by a thin blue guide line"><figcaption>The wordless picture for this build: one red wave squared into a black bar.</figcaption></figure>
 <h1>Extension Speech Recognition</h1>
 <p class="mono"><a href="https://github.com/Epsilon0xCell/Extension-Speech-Recognition"><span class="stub">stub</span>github.com/Epsilon0xCell/Extension-Speech-Recognition</a></p>
 <nav class="stepnav" aria-label="on this page">
@@ -63,7 +65,7 @@ nav.stepnav{display:flex;flex-wrap:wrap;gap:4px 18px;margin-top:16px}
 </nav>
 <p class="lede" style="margin-top:20px">A SillyTavern extension that converts speech to text. It descends from the upstream SillyTavern speech recognition extension (see the credits below); this copy carries local changes to the Browser provider, described under Local changes.</p>
 <p>Documentation: <a href="https://docs.sillytavern.app/extensions/speech-recognition/"><span class="stub">stub</span>docs.sillytavern.app</a></p>
-<figure><img class="banner" src="themed-banner.png" alt="The band mid count on a flooded field, the name written on the whiteboard under the drum major's ladder"><figcaption>themed-banner: the name arrives the way a name arrives at a rehearsal, on the board under the ladder.</figcaption></figure>
+<figure><img class="banner" src="themed-banner.png" alt="A Swiss modernist poster on a strict grid: a large black microphone on the left, loose red sound waves in the middle, the waves resolved into calm black bars stacked like a transcript page on the right, one blue accent"><figcaption>themed-banner: sound leaves the microphone as loose red waves and lands as calm black transcript bars.</figcaption></figure>
 <p><a class="btn" href="https://github.com/Epsilon0xCell/Extension-Speech-Recognition">The repo</a><a class="btn" href="#providers">Providers</a><a class="btn" href="#changes">Local changes</a></p>
 </header>
 <div class="bulbs" aria-hidden="true"></div>
@@ -77,7 +79,7 @@ nav.stepnav{display:flex;flex-wrap:wrap;gap:4px 18px;margin-top:16px}
 </section>
 <div class="bulbs" aria-hidden="true"></div>
 <section class="rank step-l" id="providers">
-<h2>Providers <span class="role">the sections of the band, each with its own chair</span></h2>
+<h2>Providers <span class="role">each provider in its own column of the grid</span></h2>
 <div class="cases">
 <div class="case"><h3 class="sound">Browser</h3><p>The Web Speech API (<code>SpeechRecognition</code> / <code>webkitSpeechRecognition</code>) in Chromium based browsers, no server needed.</p></div>
 <div class="case"><h3 class="sound">Whisper, three chairs</h3><p>Whisper (OpenAI), Whisper (Extras), and Whisper (Local): microphone audio is recorded in the browser and sent to the configured transcription backend.</p></div>
@@ -89,7 +91,7 @@ nav.stepnav{display:flex;flex-wrap:wrap;gap:4px 18px;margin-top:16px}
 </section>
 <div class="bulbs" aria-hidden="true"></div>
 <section class="rank step-r" id="changes">
-<h2>Local changes <span class="role">the problem passage, played clean</span></h2>
+<h2>Local changes <span class="role">the passage that failed, set straight</span></h2>
 <p>The Browser provider in this copy differs from upstream:</p>
 <ul>
 <li>Voice activation mode keeps recognition running: a heartbeat restarts it if it stops.</li>
@@ -132,7 +134,7 @@ async function moduleWorker() {
 </section>
 <div class="bulbs" aria-hidden="true"></div>
 <section class="rank step-r" id="files">
-<h2>The files <span class="role">the sheets on the stand</span></h2>
+<h2>The files <span class="role">the sheets, laid out flat</span></h2>
 <table><tr><th>File</th><th>Lines</th></tr>
 <tr><td><code>index.js</code></td><td>867</td></tr>
 <tr><td><code>browser.js</code></td><td>410</td></tr>
@@ -146,7 +148,7 @@ async function moduleWorker() {
 </section>
 <div class="bulbs" aria-hidden="true"></div>
 <section class="rank step-l">
-<h2>Verification <span class="role">the notes on the bus home</span></h2>
+<h2>Verification <span class="role">the notes, checked twice</span></h2>
 <p>All JavaScript files pass a Node module parse check. The Browser provider is covered by a persistent Node test suite in test/ (11 tests) that runs browser.js and the mic icon helpers from index.js against a stub SillyTavern host: settings loading and defaults, heartbeat cleanup on reload and on provider cleanup, the voice activation transcript paths, manual click sessions, error handling, and the transcript shaping helpers. Run it with Node 20 or newer:</p>
 <p class="mono">node --test test/browser-provider.test.mjs</p>
 <p>A running SillyTavern instance and a real microphone were not available in the test environment, so live transcription itself was not exercised.</p>
